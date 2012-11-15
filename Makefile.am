@@ -21,7 +21,7 @@ VERSION=@VERSION@
 distdir=$(PACKAGE)-$(VERSION)
 DIST_COMMON=config.sub configure.in configure NEWS INSTALL missing aclocal.m4 TODO install-sh Makefile.am ChangeLog COPYING README AUTHORS Makefile.in config.guess
 PLUGIN_COMMON=$(SRC_PLUGIN)/Makefile.am $(SRC_PLUGIN)/Makefile.in $(SRC_PLUGIN)/check_vmax.pl
-CONTRIB_COMMON=$(SRC_CONTRIB)/Makefile.am $(SRC_CONTRIB)/Makefile.in $(SRC_CONTRIB)/check_vmax.php
+#CONTRIB_COMMON=$(SRC_CONTRIB)/Makefile.am $(SRC_CONTRIB)/Makefile.in $(SRC_CONTRIB)/check_vmax.php
 DISTFILES=$(DIST_COMMON) $(PLUGIN_COMMON) $(CONTRIB_COMMON)
 
 # compiler settings
