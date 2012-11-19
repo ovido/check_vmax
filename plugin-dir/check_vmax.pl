@@ -10,6 +10,7 @@
 #  License: GPL - http://www.gnu.org/licenses         #
 #  Copyright: (c)2012 ovido gmbh                      #
 #  Author:  Rene Koch <r.koch@ovido.at>               #
+#  Credits: s IT Solutions AT Spardat GmbH            #
 #  URL: https://labs.ovido.at/monitoring              #
 #                                                     #
 #######################################################
