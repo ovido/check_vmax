@@ -8,7 +8,7 @@
 #  Version: 0.1.0                                     #
 #  Created: 2012-11-06                                #
 #  License: GPL - http://www.gnu.org/licenses         #
-#  Copyright: (c)2012 ovido gmbh                      #
+#  Copyright: (c)2012 ovido gmbh, http://www.ovido.at #
 #  Author:  Rene Koch <r.koch@ovido.at>               #
 #  Credits: s IT Solutions AT Spardat GmbH            #
 #  URL: https://labs.ovido.at/monitoring              #
@@ -393,6 +393,7 @@ sub check_thinpool{
 
   $statuscode = "unknown";
   my %rethash;
+  my $full = undef;
 
   for (split /^/, $return) {
     $_ =~ tr/ //s;
@@ -405,17 +406,26 @@ sub check_thinpool{
     #  Name        e h Emul  Config            MBs      MBs      MBs      MBs (%) te
     # ------------ - - ----- ------------ -------- -------- -------- -------- --- ---
     # EFD_Pool     T E FBA   RAID-5(7+1)   3944610  3944610  3684329   260281  93 Ena
+
+    # get field for usage (%)
+    if ($_ =~ /(%)/){
+      my @tmp = split / /, $_;
+      for (my $i=0;$i<=$#tmp;$i++){
+        $full = $i if $tmp[$i] eq '(%)';
+      }
+    }
+
     if ($_ =~ /RAID/){
       chomp $_;
       my @tmp = split / /, $_;
 
       # get status
-      $statuscode = "critical"	if $tmp[9] >= $o_crit;
-      $statuscode = "warning"	if $tmp[9] >= $o_warn && $statuscode ne "critical";
-      $statuscode = "ok"	if $tmp[9] <  $o_warn && $statuscode ne "critical" && $statuscode ne "warning";
+      $statuscode = "critical"	if $tmp[$full] >= $o_crit;
+      $statuscode = "warning"	if $tmp[$full] >= $o_warn && $statuscode ne "critical";
+      $statuscode = "ok"	if $tmp[$full] <  $o_warn && $statuscode ne "critical" && $statuscode ne "warning";
 
       # put result into hash
-      $rethash{$tmp[0]} = $tmp[9];
+      $rethash{$tmp[0]} = $tmp[$full];
     }
   }
 
