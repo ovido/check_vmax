@@ -7,3 +7,6 @@
 * 0.1.0 - Mon Nov 05 2012
 - This is the first public beta release of new plugin check_vmax
 
+* 0.2.0 - Fri Dec 14 2012
+- Added warning and critical definition per thin pool
+
