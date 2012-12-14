@@ -57,8 +57,9 @@ my $o_version	= undef;	# version
 my $o_timeout	= undef;	# timeout
 my $o_symcfg	= undef;	# symcfg binary
 my $o_sid	= undef;	# symmetrix ID
-my $o_warn;			# warning
-my $o_crit;			# critical
+my @o_pool;			# thin pool
+my @o_warn;			# warning
+my @o_crit;			# critical
 my $o_check	= undef;
 
 my %status	= ( ok => "OK", warning => "WARNING", critical => "CRITICAL", unknown => "UNKNOWN");
@@ -82,8 +83,9 @@ sub parse_options(){
 	'l:s'	=> \$o_check,		'check:s'	=> \$o_check,
 	's:s'	=> \$o_symcfg,		'symcfg:s'	=> \$o_symcfg,
 	'S:i'	=> \$o_sid,		'sid:i'		=> \$o_sid,
-	'w:f'	=> \$o_warn,		'warning:f'	=> \$o_warn,
-	'c:f'	=> \$o_crit,		'critical:f'	=> \$o_crit
+	'p:s'	=> \@o_pool,		'pool:s'	=> \@o_pool,
+	'w:f'	=> \@o_warn,		'warning:f'	=> \@o_warn,
+	'c:f'	=> \@o_crit,		'critical:f'	=> \@o_crit
   );
 
   # process options
@@ -97,8 +99,23 @@ sub parse_options(){
   $symcfg = $o_symcfg if defined $o_symcfg;
   $sid	  = $o_sid    if defined $o_sid;
   
-  $o_warn = 90 unless defined $o_warn;
-  $o_crit = 95 unless defined $o_crit;
+  # check if warning and critical values are given per pool
+  if ($#o_pool >= 0){
+    if ($#o_warn <= $#o_pool){
+      print "Please specify warning value per pool and global warning value!\n";
+      print_usage();
+      exit $ERRORS{$status{'unknown'}};
+    } 
+    if ($#o_crit <= $#o_pool){
+      print "Please specify critical value per pool and global critical value!\n";
+      print_usage();
+      exit $ERRORS{$status{'unknown'}};
+    } 
+  }else{
+    $o_warn[0] = 90 unless defined $o_warn[0];
+    $o_crit[0] = 95 unless defined $o_crit[0];
+  }
+
 }
 
 
@@ -110,7 +127,7 @@ sub parse_options(){
 #***************************************************#
 
 sub print_usage(){
-  print "Usage: $0 [-s <symcfg>] [-S <sid>] [-v] [-w <warn>] [-c <critical>] [-V] -l <check> \n"; 
+  print "Usage: $0 [-s <symcfg>] [-S <sid>] [-v] [-p <pool>] [-w <warn>] [-c <critical>] [-V] -l <check> \n"; 
 }
 
 
@@ -143,10 +160,15 @@ Options:
     adapter: get RF and RA adapter status
     psu: get power supply status
     thinpool: get thin pool usage
+ -p, --pool
+    Pool name for individual thin pool usage warning and 
+    critical values
  -w, --warning=DOUBLE
     Value to result in warning status
+    Specify warning per pool and/or global
  -c, --critical=DOUBLE
     Value to result in critical status
+    Specify critical per pool and/or global
  -v, --verbose
     Show details for command-line debugging
     (Icinga/Nagios may truncate output)
@@ -420,20 +442,52 @@ sub check_thinpool{
       my @tmp = split / /, $_;
 
       # get status
-      $statuscode = "critical"	if $tmp[$full] >= $o_crit;
-      $statuscode = "warning"	if $tmp[$full] >= $o_warn && $statuscode ne "critical";
-      $statuscode = "ok"	if $tmp[$full] <  $o_warn && $statuscode ne "critical" && $statuscode ne "warning";
+      if (scalar @o_pool > 0){
 
-      # put result into hash
-      $rethash{$tmp[0]} = $tmp[$full];
+	my $match = 0;
+	# match pool name and use pool warning and critical
+	for (my $i=0;$i<=$#o_pool;$i++){
+	  if ($tmp[0] =~ $o_pool[$i]){
+	    $statuscode = "critical"	if $tmp[$full] >= $o_crit[$i];
+	    $statuscode = "warning"	if $tmp[$full] >= $o_warn[$i] && $statuscode ne "critical";
+	    $statuscode = "ok"		if $tmp[$full] <  $o_warn[$i] && $statuscode ne "critical" && $statuscode ne "warning";
+	    $match = 1;
+            # put result into hash
+            $rethash{$tmp[0]}{'value'} = $tmp[$full];
+            $rethash{$tmp[0]}{'warning'} = $o_warn[$i];
+            $rethash{$tmp[0]}{'critical'} = $o_crit[$i];
+	  }
+	}
+	# use global warning and critical
+	if ($match == 0){
+          $statuscode = "critical"	if $tmp[$full] >= $o_crit[$#o_crit];
+          $statuscode = "warning"	if $tmp[$full] >= $o_warn[$#o_warn] && $statuscode ne "critical";
+          $statuscode = "ok"		if $tmp[$full] <  $o_warn[$#o_warn] && $statuscode ne "critical" && $statuscode ne "warning";
+          # put result into hash
+          $rethash{$tmp[0]}{'value'} = $tmp[$full];
+          $rethash{$tmp[0]}{'warning'} = $o_warn[$#o_warn];
+          $rethash{$tmp[0]}{'critical'} = $o_crit[$#o_crit];
+	}
+	$match = 0;
+
+      }else{
+        $statuscode = "critical"	if $tmp[$full] >= $o_crit[0];
+        $statuscode = "warning"		if $tmp[$full] >= $o_warn[0] && $statuscode ne "critical";
+        $statuscode = "ok"		if $tmp[$full] <  $o_warn[0] && $statuscode ne "critical" && $statuscode ne "warning";
+        # put result into hash
+        $rethash{$tmp[0]}{'value'} = $tmp[$full];
+        $rethash{$tmp[0]}{'warning'} = $o_warn[0];
+        $rethash{$tmp[0]}{'critical'} = $o_crit[0];
+      }
+
     }
   }
 
   my $statustext = "";
   my $perfdata = "|";
   foreach my $pool (keys %rethash){
-    $statustext .= "$pool $rethash{$pool}% used; ";
-    $perfdata   .= "\'" . lc($pool) . "\'=$rethash{$pool}%;$o_warn;$o_crit ";
+    $statustext .= "$pool $rethash{$pool}{'value'}% used(w: $rethash{$pool}{'warning'}, c: $rethash{$pool}{'critical'}); ";
+    $perfdata   .= "\'" . lc($pool) . "\'=$rethash{$pool}{'value'}%;$rethash{$pool}{'warning'};$rethash{$pool}{'critical'} ";
   }
 
   chop $statustext;
