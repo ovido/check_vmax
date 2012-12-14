@@ -5,7 +5,7 @@
 #                                                     #
 #  Name:    check_vmax                                #
 #                                                     #
-#  Version: 0.1.0                                     #
+#  Version: 0.2.0                                     #
 #  Created: 2012-11-06                                #
 #  License: GPL - http://www.gnu.org/licenses         #
 #  Copyright: (c)2012 ovido gmbh, http://www.ovido.at #
@@ -48,7 +48,7 @@ my $perfdata	= 1;
 
 # Variables
 my $prog	= "check_vmax";
-my $version	= "0.1";
+my $version	= "0.2";
 my $projecturl  = "https://labs.ovido.at/monitoring/wiki/check_vmax";
 
 my $o_verbose	= undef;	# verbosity
