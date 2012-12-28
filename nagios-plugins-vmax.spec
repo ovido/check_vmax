@@ -1,5 +1,5 @@
 Name:		nagios-plugins-vmax
-Version:	0.2
+Version:	1.0
 Release:	1%{?dist}
 Summary:	EMC Symmetrix VMAX monitoring plugin for Nagios/Icinga
 
@@ -42,6 +42,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Dec 28 2012 Rene Koch <r.koch@ovido.at> 1.0-1
+- Initial build.
+
 * Fri Dec 14 2012 Rene koch <r.koch@ovido.at> 0.2-1
 - Initial build.
 
